@@ -1,0 +1,720 @@
+html_content = '''<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ping Pong Neon</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Rajdhani:wght@300;500;700&display=swap');
+        
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: 'Rajdhani', sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            color: white;
+        }
+        
+        .game-wrapper {
+            position: relative;
+            width: 100%;
+            max-width: 1000px;
+            padding: 20px;
+        }
+        
+        .header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            background: linear-gradient(135deg, #00f5ff 0%, #ff00ff 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-transform: uppercase;
+            letter-spacing: 4px;
+            text-shadow: 0 0 30px rgba(0, 245, 255, 0.5);
+            margin-bottom: 10px;
+        }
+        
+        .subtitle {
+            color: #888;
+            font-size: 1.1rem;
+            letter-spacing: 2px;
+        }
+        
+        .game-container {
+            position: relative;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            border-radius: 20px;
+            padding: 20px;
+            box-shadow: 
+                0 0 50px rgba(0, 245, 255, 0.1),
+                inset 0 0 50px rgba(0, 0, 0, 0.5);
+            border: 2px solid rgba(0, 245, 255, 0.2);
+        }
+        
+        canvas {
+            display: block;
+            width: 100%;
+            background: radial-gradient(ellipse at center, #0f0f23 0%, #000 100%);
+            border-radius: 10px;
+            box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.8);
+        }
+        
+        .ui-overlay {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 10;
+            background: rgba(0, 0, 0, 0.9);
+            padding: 40px;
+            border-radius: 20px;
+            border: 2px solid #00f5ff;
+            box-shadow: 0 0 40px rgba(0, 245, 255, 0.3);
+            backdrop-filter: blur(10px);
+        }
+        
+        .ui-overlay.hidden {
+            display: none;
+        }
+        
+        .menu-title {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 2rem;
+            color: #00f5ff;
+            margin-bottom: 30px;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        
+        .menu-button {
+            display: block;
+            width: 250px;
+            margin: 15px auto;
+            padding: 15px 30px;
+            background: transparent;
+            border: 2px solid #00f5ff;
+            color: #00f5ff;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border-radius: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .menu-button::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(0, 245, 255, 0.4), transparent);
+            transition: left 0.5s;
+        }
+        
+        .menu-button:hover::before {
+            left: 100%;
+        }
+        
+        .menu-button:hover {
+            background: rgba(0, 245, 255, 0.1);
+            box-shadow: 0 0 20px rgba(0, 245, 255, 0.4);
+            transform: scale(1.05);
+        }
+        
+        .menu-button.secondary {
+            border-color: #ff00ff;
+            color: #ff00ff;
+        }
+        
+        .menu-button.secondary:hover {
+            background: rgba(255, 0, 255, 0.1);
+            box-shadow: 0 0 20px rgba(255, 0, 255, 0.4);
+        }
+        
+        .score-board {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px 30px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 10px;
+            margin-bottom: 15px;
+            border: 1px solid rgba(0, 245, 255, 0.2);
+        }
+        
+        .player-score {
+            text-align: center;
+        }
+        
+        .player-name {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.9rem;
+            color: #888;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 5px;
+        }
+        
+        .score-value {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            font-weight: 900;
+            color: #00f5ff;
+            text-shadow: 0 0 20px rgba(0, 245, 255, 0.5);
+        }
+        
+        .player-score.right .score-value {
+            color: #ff00ff;
+            text-shadow: 0 0 20px rgba(255, 0, 255, 0.5);
+        }
+        
+        .vs {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.2rem;
+            color: #444;
+            font-weight: 700;
+        }
+        
+        .controls-info {
+            display: flex;
+            justify-content: space-between;
+            margin-top: 15px;
+            padding: 10px;
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 8px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        
+        .control-key {
+            display: inline-block;
+            padding: 3px 8px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 4px;
+            margin: 0 3px;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            color: #00f5ff;
+        }
+        
+        .pause-btn {
+            position: absolute;
+            top: 30px;
+            right: 30px;
+            background: rgba(0, 0, 0, 0.7);
+            border: 1px solid #00f5ff;
+            color: #00f5ff;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.8rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            transition: all 0.3s ease;
+            z-index: 5;
+        }
+        
+        .pause-btn:hover {
+            background: rgba(0, 245, 255, 0.2);
+            box-shadow: 0 0 15px rgba(0, 245, 255, 0.4);
+        }
+        
+        .difficulty-selector {
+            margin: 20px 0;
+        }
+        
+        .difficulty-title {
+            color: #888;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+        
+        .difficulty-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+        }
+        
+        .diff-btn {
+            padding: 8px 16px;
+            background: transparent;
+            border: 1px solid #444;
+            color: #666;
+            cursor: pointer;
+            border-radius: 4px;
+            font-family: 'Rajdhani', sans-serif;
+            font-weight: 700;
+            transition: all 0.3s ease;
+        }
+        
+        .diff-btn.active {
+            border-color: #00f5ff;
+            color: #00f5ff;
+            box-shadow: 0 0 10px rgba(0, 245, 255, 0.3);
+        }
+        
+        .diff-btn:hover {
+            border-color: #666;
+            color: #888;
+        }
+        
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2rem;
+            }
+            
+            .score-value {
+                font-size: 2rem;
+            }
+            
+            .ui-overlay {
+                padding: 25px;
+                width: 90%;
+            }
+            
+            .menu-button {
+                width: 200px;
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <div class="header">
+            <h1>Ping Pong Neon</h1>
+            <p class="subtitle">Arcade Retro Futurista</p>
+        </div>
+        
+        <div class="score-board">
+            <div class="player-score">
+                <div class="player-name">Jogador 1</div>
+                <div class="score-value" id="score1">0</div>
+            </div>
+            <div class="vs">VS</div>
+            <div class="player-score right">
+                <div class="player-name" id="player2Name">Computador</div>
+                <div class="score-value" id="score2">0</div>
+            </div>
+        </div>
+        
+        <div class="game-container">
+            <canvas id="gameCanvas" width="800" height="400"></canvas>
+            
+            <button class="pause-btn" id="pauseBtn" onclick="togglePause()">Pausar</button>
+            
+            <div class="ui-overlay" id="mainMenu">
+                <h2 class="menu-title">Menu Principal</h2>
+                <button class="menu-button" onclick="startGame('ai')">1 Jogador vs IA</button>
+                <button class="menu-button secondary" onclick="startGame('pvp')">2 Jogadores Local</button>
+                
+                <div class="difficulty-selector" id="diffSelector">
+                    <div class="difficulty-title">Dificuldade da IA</div>
+                    <div class="difficulty-buttons">
+                        <button class="diff-btn active" onclick="setDifficulty('easy')">Fácil</button>
+                        <button class="diff-btn" onclick="setDifficulty('medium')">Médio</button>
+                        <button class="diff-btn" onclick="setDifficulty('hard')">Difícil</button>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="ui-overlay hidden" id="pauseMenu">
+                <h2 class="menu-title">Jogo Pausado</h2>
+                <button class="menu-button" onclick="resumeGame()">Continuar</button>
+                <button class="menu-button secondary" onclick="backToMenu()">Menu Principal</button>
+            </div>
+            
+            <div class="ui-overlay hidden" id="gameOverMenu">
+                <h2 class="menu-title" id="winnerText">Vitória!</h2>
+                <button class="menu-button" onclick="restartGame()">Revanche</button>
+                <button class="menu-button secondary" onclick="backToMenu()">Menu Principal</button>
+            </div>
+        </div>
+        
+        <div class="controls-info">
+            <div>
+                <strong>Jogador 1:</strong> 
+                <span class="control-key">W</span> Cima 
+                <span class="control-key">S</span> Baixo
+            </div>
+            <div id="p2Controls" style="opacity: 0.5;">
+                <strong>Jogador 2:</strong> 
+                <span class="control-key">↑</span> Cima 
+                <span class="control-key">↓</span> Baixo
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        // Game state
+        let gameMode = 'ai';
+        let difficulty = 'easy';
+        let isPaused = false;
+        let isGameOver = false;
+        let animationId;
+        
+        // Game objects
+        const paddleWidth = 15;
+        const paddleHeight = 80;
+        const ballSize = 12;
+        
+        let player1 = {
+            y: canvas.height / 2 - paddleHeight / 2,
+            score: 0,
+            speed: 0,
+            maxSpeed: 6
+        };
+        
+        let player2 = {
+            y: canvas.height / 2 - paddleHeight / 2,
+            score: 0,
+            speed: 0,
+            maxSpeed: 6
+        };
+        
+        let ball = {
+            x: canvas.width / 2,
+            y: canvas.height / 2,
+            dx: 5,
+            dy: 3,
+            speed: 6,
+            trail: []
+        };
+        
+        // AI settings
+        const aiSettings = {
+            easy: { speed: 3, reaction: 0.3, error: 40 },
+            medium: { speed: 4.5, reaction: 0.6, error: 20 },
+            hard: { speed: 5.5, reaction: 0.9, error: 5 }
+        };
+        
+        // Input handling
+        const keys = {};
+        
+        document.addEventListener('keydown', (e) => {
+            keys[e.key.toLowerCase()] = true;
+            if (e.key === 'Escape' && !document.getElementById('mainMenu').classList.contains('hidden')) {
+                togglePause();
+            }
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key.toLowerCase()] = false;
+        });
+        
+        // Touch controls for mobile
+        let touchStartY = 0;
+        canvas.addEventListener('touchstart', (e) => {
+            touchStartY = e.touches[0].clientY;
+        });
+        
+        canvas.addEventListener('touchmove', (e) => {
+            e.preventDefault();
+            const touchY = e.touches[0].clientY;
+            const rect = canvas.getBoundingClientRect();
+            const relativeY = touchY - rect.top;
+            
+            if (gameMode === 'pvp') {
+                if (e.touches[0].clientX < rect.left + rect.width / 2) {
+                    player1.y = relativeY - paddleHeight / 2;
+                } else {
+                    player2.y = relativeY - paddleHeight / 2;
+                }
+            } else {
+                player1.y = relativeY - paddleHeight / 2;
+            }
+        });
+        
+        function setDifficulty(level) {
+            difficulty = level;
+            document.querySelectorAll('.diff-btn').forEach(btn => {
+                btn.classList.remove('active');
+            });
+            event.target.classList.add('active');
+        }
+        
+        function startGame(mode) {
+            gameMode = mode;
+            document.getElementById('mainMenu').classList.add('hidden');
+            document.getElementById('player2Name').textContent = mode === 'ai' ? 'Computador' : 'Jogador 2';
+            document.getElementById('p2Controls').style.opacity = mode === 'pvp' ? '1' : '0.5';
+            resetGame();
+            gameLoop();
+        }
+        
+        function resetGame() {
+            player1.y = canvas.height / 2 - paddleHeight / 2;
+            player2.y = canvas.height / 2 - paddleHeight / 2;
+            player1.score = 0;
+            player2.score = 0;
+            updateScore();
+            resetBall();
+            isGameOver = false;
+            isPaused = false;
+        }
+        
+        function resetBall() {
+            ball.x = canvas.width / 2;
+            ball.y = canvas.height / 2;
+            ball.speed = 6;
+            ball.dx = (Math.random() > 0.5 ? 1 : -1) * ball.speed;
+            ball.dy = (Math.random() * 2 - 1) * ball.speed;
+            ball.trail = [];
+        }
+        
+        function updateScore() {
+            document.getElementById('score1').textContent = player1.score;
+            document.getElementById('score2').textContent = player2.score;
+        }
+        
+        function update() {
+            if (isPaused || isGameOver) return;
+            
+            // Player 1 controls (W/S)
+            if (keys['w'] && player1.y > 0) {
+                player1.y -= player1.maxSpeed;
+            }
+            if (keys['s'] && player1.y < canvas.height - paddleHeight) {
+                player1.y += player1.maxSpeed;
+            }
+            
+            // Player 2 controls or AI
+            if (gameMode === 'pvp') {
+                if (keys['arrowup'] && player2.y > 0) {
+                    player2.y -= player2.maxSpeed;
+                }
+                if (keys['arrowdown'] && player2.y < canvas.height - paddleHeight) {
+                    player2.y += player2.maxSpeed;
+                }
+            } else {
+                updateAI();
+            }
+            
+            // Ball trail
+            ball.trail.push({ x: ball.x, y: ball.y });
+            if (ball.trail.length > 10) ball.trail.shift();
+            
+            // Ball movement
+            ball.x += ball.dx;
+            ball.y += ball.dy;
+            
+            // Ball collision with top/bottom
+            if (ball.y <= 0 || ball.y >= canvas.height) {
+                ball.dy = -ball.dy;
+                ball.y = ball.y <= 0 ? 0 : canvas.height;
+            }
+            
+            // Ball collision with paddles
+            if (ball.dx < 0 && 
+                ball.x <= paddleWidth + 10 && 
+                ball.x >= 10 && 
+                ball.y >= player1.y && 
+                ball.y <= player1.y + paddleHeight) {
+                
+                ball.dx = -ball.dx * 1.05;
+                ball.speed *= 1.02;
+                let hitPos = (ball.y - player1.y) / paddleHeight;
+                ball.dy = 8 * (hitPos - 0.5);
+                ball.x = paddleWidth + 10;
+            }
+            
+            if (ball.dx > 0 && 
+                ball.x >= canvas.width - paddleWidth - 10 && 
+                ball.x <= canvas.width - 10 && 
+                ball.y >= player2.y && 
+                ball.y <= player2.y + paddleHeight) {
+                
+                ball.dx = -ball.dx * 1.05;
+                ball.speed *= 1.02;
+                let hitPos = (ball.y - player2.y) / paddleHeight;
+                ball.dy = 8 * (hitPos - 0.5);
+                ball.x = canvas.width - paddleWidth - 10;
+            }
+            
+            // Scoring
+            if (ball.x < 0) {
+                player2.score++;
+                updateScore();
+                checkWin();
+                resetBall();
+            } else if (ball.x > canvas.width) {
+                player1.score++;
+                updateScore();
+                checkWin();
+                resetBall();
+            }
+        }
+        
+        function updateAI() {
+            const ai = aiSettings[difficulty];
+            const targetY = ball.y - paddleHeight / 2;
+            const currentY = player2.y;
+            
+            // Add some error based on difficulty
+            const error = (Math.random() - 0.5) * ai.error;
+            const adjustedTarget = targetY + error;
+            
+            // Reaction delay
+            if (Math.random() > ai.reaction) return;
+            
+            if (Math.abs(adjustedTarget - currentY) > ai.speed) {
+                if (adjustedTarget > currentY) {
+                    player2.y += ai.speed;
+                } else {
+                    player2.y -= ai.speed;
+                }
+            }
+            
+            // Keep paddle in bounds
+            player2.y = Math.max(0, Math.min(canvas.height - paddleHeight, player2.y));
+        }
+        
+        function checkWin() {
+            if (player1.score >= 10 || player2.score >= 10) {
+                isGameOver = true;
+                const winner = player1.score >= 10 ? 'Jogador 1' : (gameMode === 'ai' ? 'Computador' : 'Jogador 2');
+                document.getElementById('winnerText').textContent = winner + ' Venceu!';
+                document.getElementById('gameOverMenu').classList.remove('hidden');
+            }
+        }
+        
+        function draw() {
+            // Clear canvas with fade effect
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.3)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            
+            // Draw center line
+            ctx.strokeStyle = 'rgba(0, 245, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([10, 10]);
+            ctx.beginPath();
+            ctx.moveTo(canvas.width / 2, 0);
+            ctx.lineTo(canvas.width / 2, canvas.height);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            
+            // Draw ball trail
+            ball.trail.forEach((pos, index) => {
+                const alpha = index / ball.trail.length;
+                ctx.beginPath();
+                ctx.arc(pos.x, pos.y, ballSize * alpha * 0.8, 0, Math.PI * 2);
+                ctx.fillStyle = `rgba(0, 245, 255, ${alpha * 0.5})`;
+                ctx.fill();
+            });
+            
+            // Draw ball with glow
+            ctx.shadowBlur = 20;
+            ctx.shadowColor = '#00f5ff';
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ballSize, 0, Math.PI * 2);
+            ctx.fillStyle = '#00f5ff';
+            ctx.fill();
+            ctx.shadowBlur = 0;
+            
+            // Draw paddles with glow
+            ctx.shadowBlur = 15;
+            
+            // Player 1 paddle
+            ctx.shadowColor = '#00f5ff';
+            ctx.fillStyle = '#00f5ff';
+            ctx.fillRect(10, player1.y, paddleWidth, paddleHeight);
+            
+            // Player 2 paddle
+            ctx.shadowColor = '#ff00ff';
+            ctx.fillStyle = '#ff00ff';
+            ctx.fillRect(canvas.width - paddleWidth - 10, player2.y, paddleWidth, paddleHeight);
+            
+            ctx.shadowBlur = 0;
+        }
+        
+        function gameLoop() {
+            update();
+            draw();
+            animationId = requestAnimationFrame(gameLoop);
+        }
+        
+        function togglePause() {
+            if (document.getElementById('mainMenu').classList.contains('hidden') && 
+                document.getElementById('gameOverMenu').classList.contains('hidden')) {
+                isPaused = !isPaused;
+                document.getElementById('pauseMenu').classList.toggle('hidden');
+                document.getElementById('pauseBtn').textContent = isPaused ? 'Continuar' : 'Pausar';
+            }
+        }
+        
+        function resumeGame() {
+            isPaused = false;
+            document.getElementById('pauseMenu').classList.add('hidden');
+            document.getElementById('pauseBtn').textContent = 'Pausar';
+        }
+        
+        function restartGame() {
+            document.getElementById('gameOverMenu').classList.add('hidden');
+            resetGame();
+        }
+        
+        function backToMenu() {
+            isPaused = false;
+            isGameOver = false;
+            cancelAnimationFrame(animationId);
+            document.getElementById('pauseMenu').classList.add('hidden');
+            document.getElementById('gameOverMenu').classList.add('hidden');
+            document.getElementById('mainMenu').classList.remove('hidden');
+            document.getElementById('pauseBtn').textContent = 'Pausar';
+            
+            // Clear canvas
+            ctx.fillStyle = '#0f0f23';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+        }
+        
+        // Initial draw
+        ctx.fillStyle = '#0f0f23';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+    </script>
+</body>
+</html>'''
+
+# Salvar o arquivo
+with open('/mnt/kimi/output/ping_pong.html', 'w', encoding='utf-8') as f:
+    f.write(html_content)
+
+print("🎮 Ping Pong criado com sucesso!")
+print("📁 Arquivo salvo em: /mnt/kimi/output/ping_pong.html")
+print("\n✨ Funcionalidades:")
+print("   • Modo 1 Jogador vs IA (3 níveis de dificuldade)")
+print("   • Modo 2 Jogadores Local")
+print("   • Física realista com velocidade progressiva")
+print("   • Efeitos visuais neon com rastro da bola")
+print("   • Controles por teclado e touch (mobile)")
+print("   • Sistema de pontuação até 10 pontos")
+print("   • Menu de pausa durante o jogo")
